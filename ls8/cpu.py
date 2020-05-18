@@ -1,13 +1,20 @@
 """CPU functionality."""
 import sys
 
+LDI = 0b10000010
+PRN = 0b01000111
+HLT = 0b00000001
+MUL = 0b10100010
+
 
 class CPU:
     """Main CPU class."""
 
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.pc = 0  # starts program counter/ instruction pointer
+        self.register = [0] * 8  # sets registers R0-R7
+        self.ram = [0] * 256  # available memory
 
     def load(self):
         """Load a program into memory."""
@@ -34,7 +41,7 @@ class CPU:
         """ALU operations."""
 
         if op == "ADD":
-            self.reg[reg_a] += self.reg[reg_b]
+            self.register[reg_a] += self.register[reg_b]
         # elif op == "SUB": etc
         else:
             raise Exception("Unsupported ALU operation")
@@ -59,6 +66,34 @@ class CPU:
 
         print()
 
+    def ram_read(self, read_address):
+        MDR = self.ram[read_address]
+        return MDR
+
+    def ram_write(self, value, write_address):
+        self.ram[write_address] = value
+        MAR = value
+        return MAR
+
     def run(self):
         """Run the CPU."""
-        pass
+
+        while True:
+            # set memory to pointer
+            instruction = self.ram[self.pc]
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+            if instruction == HLT:
+                sys.exit()
+            elif instruction == LDI:
+                self.register[operand_a] = operand_b
+                self.pc += 3
+            elif instruction == PRN:
+                print(self.register[operand_a])
+                self.pc += 2
+            elif instruction == MUL:
+                self.alu(instruction, operand_a, operand_b)
+                self.pc += 3
+            else:
+                print(f'Not working')
+                sys.exit(1)
