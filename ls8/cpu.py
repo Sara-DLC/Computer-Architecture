@@ -81,8 +81,7 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        running = True
-        while running:
+        while True:
             # set memory to pointer
             instruction = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
