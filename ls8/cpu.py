@@ -16,26 +16,37 @@ class CPU:
         self.register = [0] * 8  # sets registers R0-R7
         self.ram = [0] * 256  # available memory
 
-    def load(self):
+    def ram_read(self, read_address):
+        MDR = self.ram[read_address]
+        return MDR
+
+    def ram_write(self, value, write_address):
+        self.ram[write_address] = value
+        MAR = value
+        return MAR
+
+    def load(self, filename):
         """Load a program into memory."""
-
         address = 0
-
-        # For now, we've just hardcoded a program:
-
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
-
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        try:
+            with open(sys.argv[1]) as files:
+                # read lines
+                for line in files:
+                    # go through comments and strip out input and ignore anything after # as they are comments
+                    comment = line.strip().split("#")
+                    result = comment[0].strip()
+                    # ignore blanks
+                    if result == "":
+                        continue
+                    # convert binary string to integer
+                    instruction = int(result, 2)
+                    # add to memory
+                    self.ram[address] = instruction
+                    address += 1
+        except FileExistsError:
+            # exit with error code
+            print('File not found')
+            sys.exit(1)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -43,6 +54,8 @@ class CPU:
         if op == "ADD":
             self.register[reg_a] += self.register[reg_b]
         # elif op == "SUB": etc
+        elif op == MUL:
+            self.register[reg_a] *= self.register[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -66,26 +79,15 @@ class CPU:
 
         print()
 
-    def ram_read(self, read_address):
-        MDR = self.ram[read_address]
-        return MDR
-
-    def ram_write(self, value, write_address):
-        self.ram[write_address] = value
-        MAR = value
-        return MAR
-
     def run(self):
         """Run the CPU."""
-
-        while True:
+        running = True
+        while running:
             # set memory to pointer
             instruction = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-            if instruction == HLT:
-                sys.exit()
-            elif instruction == LDI:
+            if instruction == LDI:
                 self.register[operand_a] = operand_b
                 self.pc += 3
             elif instruction == PRN:
@@ -94,6 +96,8 @@ class CPU:
             elif instruction == MUL:
                 self.alu(instruction, operand_a, operand_b)
                 self.pc += 3
+            elif instruction == HLT:
+                break
             else:
                 print(f'Not working')
                 sys.exit(1)
